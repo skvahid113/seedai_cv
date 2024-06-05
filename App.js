@@ -8,6 +8,7 @@ import Diagnose from './diagnose';
 import Mycompost from './mycompost';
 import More from './more';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Objectdetection from './objectdetection';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -16,7 +17,7 @@ function HomeTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: '#2E4B5A',
+        tabBarActiveTintColor: '#071D46',
         tabBarInactiveTintColor: '#dddddd',
         tabBarStyle: { backgroundColor: '#269F72', display: 'flex' },
       }}
@@ -26,10 +27,10 @@ function HomeTabs() {
         component={Home}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="home" color={color} size={size} 
+            <MaterialCommunityIcons name="home" color={color} size={size}
             />
           ),
-          headerShown: false, 
+          headerShown: false,
         }}
       />
       <Tab.Screen
@@ -38,9 +39,9 @@ function HomeTabs() {
         options={{
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="test-tube" color={color} size={size}
-             />
+            />
           ),
-          headerShown: false, 
+          headerShown: false,
         }}
       />
       <Tab.Screen
@@ -50,7 +51,7 @@ function HomeTabs() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="flower" color={color} size={size} />
           ),
-          headerShown: false, 
+          headerShown: false,
         }}
       />
       <Tab.Screen
@@ -60,7 +61,7 @@ function HomeTabs() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="dots-horizontal" color={color} size={size} />
           ),
-          headerShown: false, 
+          headerShown: false,
         }}
       />
     </Tab.Navigator>
@@ -71,21 +72,36 @@ function HomeTabs() {
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator 
+      <Stack.Navigator
         initialRouteName="Launch"
         screenOptions={{ headerShown: false }} // Hide header globally for all screens
       >
-        <Stack.Screen 
-          name="Launch" 
-          component={Launch} 
+        <Stack.Screen
+          name="Launch"
+          component={Launch}
           options={{ headerShown: false }} // Hide header for Launch screen
         />
-        <Stack.Screen 
-          name="Home" 
-          component={HomeTabs} 
-          options={{ 
+        <Stack.Screen
+          name="Home"
+          component={HomeTabs}
+          options={{
             headerShown: false, // Hide header for Home screen
-          }} 
+          }}
+        />
+        <Stack.Screen
+          name="Objectdetection"
+          component={Objectdetection}
+          options={{
+            headerShown: false, // Hide header for Home screen
+          }}
+        />
+
+        <Stack.Screen
+          name="More"
+          component={More}
+          options={{
+            headerShown: false, // Hide header for Home screen
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>

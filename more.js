@@ -32,7 +32,7 @@ export default function More() {
     return (
         <View style={styles.container}>
             <View style={styles.topSection}>
-                
+
                 <TouchableOpacity style={styles.topButton} onPress={() => navigation.navigate('Diagnose')}>
                     <FontAwesome name="camera" size={40} color="white" />
                     <Text style={styles.topButtonText}>Scan</Text>
@@ -46,7 +46,7 @@ export default function More() {
 
             <Text style={styles.mainTitle}>Explore by Identifying</Text>
             <View style={styles.grid}>
-                <TouchableOpacity style={styles.gridItem}>
+                <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('Objectdetection')}>
                     <FontAwesome name="bullseye" size={48} color="#00E676" />
                     <Text style={styles.gridText}>Object Detection</Text>
                 </TouchableOpacity>
@@ -54,7 +54,7 @@ export default function More() {
                     <FontAwesome name="bug" size={48} color="#00E676" />
                     <Text style={styles.gridText}>Insect Identification</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.gridItem}>
+                <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('Diagnose')}>
                     <FontAwesome name="leaf" size={48} color="#00E676" />
                     <Text style={styles.gridText}>Compost Diagnosis</Text>
                 </TouchableOpacity>

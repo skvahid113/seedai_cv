@@ -1,6 +1,6 @@
-import { CameraView, useCameraPermissions } from 'expo-camera';
 import React, { useRef, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Button } from 'react-native';
+import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Button } from 'react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { FontAwesome } from '@expo/vector-icons'; // Import FontAwesome icons
 import * as FileSystem from 'expo-file-system';
 import * as Progress from 'react-native-progress'; // Import Progress from react-native-progress
@@ -16,6 +16,8 @@ export default function Diagnose() {
     const [croppedImages, setCroppedImages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [suggestionsHTML, setSuggestionsHTML] = useState([]);
+    const [modalVisible, setModalVisible] = useState(false); // State for modal visibility
     const cameraRef = useRef(null);
 
     if (!permission) {
@@ -53,33 +55,37 @@ export default function Diagnose() {
         return Math.floor(Math.random() * 16777215).toString(16);
     }
 
-    function getNLPSuggestions() {
+    function getNLPSuggestions(detectedObjectsText, setSuggestionsHTML) {
+        console.log(detectedObjectsText);
         // Call the API to generate suggestions
-        fetch('http://192.168.0.109:9191/generate', {
+        fetch('http://192.168.0.109:9191/generate?text=' + encodeURIComponent(detectedObjectsText), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                text: `${detectedObjects}`, // Pass the detected objects text
-            }),
+                'api_key_header': 'AIzaSyD7DbIF_nStfpj1vjIVpX7q-eBrM-YcRbI',  // Replace with your actual API key header if required
+            }
         })
-        .then((response) => response.json())
-        .then((data) => {
-            console.log(data)
-            // Parse the generated text into HTML points
-            const suggestionsHTML = data.generated_text.split('\n').map((point, index) => (
-                <li key={index}>{point}</li>
-            ));
-            // Update the state to show suggestions
-            setSuggestionsHTML(suggestionsHTML);
-            setShowSuggestions(true);
-        })
-        .catch((error) => {
-            console.error('Error fetching suggestions:', error);
-        });
+            .then((response) => response.json())
+            .then((data) => {
+                console.log("response", data);
+                // Parse the generated text into HTML points
+                const suggestionsHTML = data.generated_text.split('\n')
+                    .filter(point => point.trim() !== "") // Remove empty lines
+                    .map((point, index) => (
+                        <View key={index} style={styles.suggestionBox}>
+                            <FontAwesome name="caret-right" size={16} color="#007AFF" />
+                            <Text style={styles.suggestionText}>{point.trim().replace(/\*\*/g, '')}</Text>
+                        </View>
+                    ));
+                // Update the state to show suggestions
+                setSuggestionsHTML(suggestionsHTML);
+                setShowSuggestions(true);
+                setModalVisible(true); // Show modal with suggestions
+            })
+            .catch((error) => {
+                console.error('Error fetching suggestions:', error);
+            });
     }
-    
 
     function detectObjects(imageUri) {
         setLoading(true);
@@ -163,7 +169,6 @@ export default function Diagnose() {
         return 'The "Analyze Compost Health" section evaluates the overall health of your compost based on the detected objects. Click the "Analyze" button for a comprehensive analysis and actionable insights.';
     }
 
-
     return (
         <View style={styles.container}>
             <View style={styles.cameraContainer}>
@@ -185,14 +190,16 @@ export default function Diagnose() {
                     <ScrollView>
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>Detected Objects</Text>
-                            {showObjects && (
+                            {showObjects && detectedObjects.length > 0 ? (
                                 <View style={styles.itemContainer}>
                                     {detectedObjects.map((description, index) => (
-                                        <View key={index} style={[styles.itemBox, { backgroundColor: '#363E40' }]}>
+                                        <View key={index} style={[styles.itemBox, { backgroundColor: '#7A7458' }]}>
                                             <Text style={styles.itemText}>{description}</Text>
                                         </View>
                                     ))}
                                 </View>
+                            ) : (
+                                <Text>No Objects Detected</Text>
                             )}
                         </View>
                         {showObjects && (
@@ -200,15 +207,15 @@ export default function Diagnose() {
                                 <TouchableOpacity onPress={() => setShowSuggestions(!showSuggestions)}>
                                     <View style={styles.accordion}>
                                         <Text style={styles.accordionTitle}>View Suggestions</Text>
-                                        <FontAwesome name={showSuggestions ? "chevron-up" : "chevron-down"} size={24} color="#007AFF" />
+                                        <FontAwesome name={showSuggestions ? "chevron-up" : "chevron-down"} size={24} color="#FFFFFF" />
                                     </View>
                                 </TouchableOpacity>
                                 {showSuggestions && (
                                     <View style={styles.accordionContent}>
                                         <Text style={styles.contentText}>{getSuggestions()}</Text>
                                         <TouchableOpacity
-                                            onPress={() => getNLPSuggestions()}
-                                            style={[styles.analyzeButton, { backgroundColor: '#007AFF', width: 150 }]}
+                                            onPress={() => getNLPSuggestions(detectedObjects.join(', '), setSuggestionsHTML)}
+                                            style={[styles.analyzeButton, { backgroundColor: '#25874A', width: 150 }]}
                                         >
                                             <Text style={styles.buttonText}>Suggest</Text>
                                         </TouchableOpacity>
@@ -217,7 +224,7 @@ export default function Diagnose() {
                                 <TouchableOpacity onPress={() => setShowAnalyze(!showAnalyze)}>
                                     <View style={styles.accordion}>
                                         <Text style={styles.accordionTitle}>Analyze Compost Health</Text>
-                                        <FontAwesome name={showAnalyze ? "chevron-up" : "chevron-down"} size={24} color="#007AFF" />
+                                        <FontAwesome name={showAnalyze ? "chevron-up" : "chevron-down"} size={24} color="#FFFFFF" />
                                     </View>
                                 </TouchableOpacity>
                                 {showAnalyze && (
@@ -225,7 +232,7 @@ export default function Diagnose() {
                                         <Text style={styles.contentText}>{getAnalysis()}</Text>
                                         <TouchableOpacity
                                             onPress={() => alert('Analysis displayed')}
-                                            style={[styles.analyzeButton, { backgroundColor: '#007AFF', width: 150 }]}
+                                            style={[styles.analyzeButton, { backgroundColor: '#25874A', width: 150 }]}
                                         >
                                             <Text style={styles.buttonText}>Analyze</Text>
                                         </TouchableOpacity>
@@ -235,7 +242,7 @@ export default function Diagnose() {
                         )}
                     </ScrollView>
                     <TouchableOpacity onPress={retakePicture} style={styles.retakeButton}>
-                        <FontAwesome name="camera-retro" size={48} color="#007AFF" />
+                        <FontAwesome name="camera-retro" size={48} color="#FE4628" />
                         <Text style={styles.retakeButtonText}>Retake Picture</Text>
                     </TouchableOpacity>
                 </View>
@@ -245,6 +252,32 @@ export default function Diagnose() {
                     <Text style={styles.captureButtonText}>Take Picture</Text>
                 </TouchableOpacity>
             )}
+            {/* Modal for displaying suggestions */}
+            {/* Modal for displaying suggestions */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => {
+                    setModalVisible(!modalVisible);
+                }}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Suggestions</Text>
+                        <ScrollView contentContainerStyle={styles.suggestionsContainer}>
+                            {suggestionsHTML}
+                        </ScrollView>
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={() => setModalVisible(!modalVisible)}
+                        >
+                            <Text style={styles.closeButtonText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
         </View>
     );
 }
@@ -364,7 +397,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 10,
         paddingHorizontal: 20,
-        backgroundColor: '#007AFF',
+        backgroundColor: '#3DCF85',
         borderRadius: 5,
         marginVertical: 5,
     },
@@ -396,5 +429,59 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: 'white',
         textAlign: 'center', // Center the text within the button
+    },
+    suggestionText: {
+        fontSize: 16,
+        color: '#000',
+        marginVertical: 5,
+    },
+    suggestionsContainer: {
+        marginTop: 10,
+    },
+    // Modal styles
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+        width: '90%',
+        height: '60%', // Adjust the height as needed
+        backgroundColor: '#FFF',
+        borderRadius: 10,
+        padding: 20,
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    suggestionsContainer: {
+        marginTop: 15,
+        paddingBottom: 20,
+    },
+    closeButton: {
+        marginTop: 20,
+        backgroundColor: '#F47434',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+    },
+    closeButtonText: {
+        color: '#FFF',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    suggestionText: {
+        fontSize: 16,
+        color: '#000',
+        marginVertical: 5,
+    },
+    suggestionBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
     },
 });

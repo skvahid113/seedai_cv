@@ -18,13 +18,17 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.seedaicv"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      
       [
         "expo-camera",
         {
@@ -34,6 +38,11 @@
         }
       ],
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d29e9eb0-deac-4f20-8a0f-1ce6ecb6bf60"
+      }
+    }
   }
 }
