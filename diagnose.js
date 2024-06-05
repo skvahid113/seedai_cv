@@ -5,6 +5,7 @@ import { FontAwesome } from '@expo/vector-icons'; // Import FontAwesome icons
 import * as FileSystem from 'expo-file-system';
 import * as Progress from 'react-native-progress'; // Import Progress from react-native-progress
 
+
 export default function Diagnose() {
     const [permission, requestPermission] = useCameraPermissions();
     const [showObjects, setShowObjects] = useState(false);
