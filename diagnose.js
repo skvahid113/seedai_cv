@@ -1,12 +1,14 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Button } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { FontAwesome } from '@expo/vector-icons'; // Import FontAwesome icons
 import * as FileSystem from 'expo-file-system';
 import * as Progress from 'react-native-progress'; // Import Progress from react-native-progress
+import { useRoute } from '@react-navigation/native'; // Add this line
 
 
 export default function Diagnose() {
+    const route = useRoute();
     const [permission, requestPermission] = useCameraPermissions();
     const [showObjects, setShowObjects] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -20,6 +22,17 @@ export default function Diagnose() {
     const [suggestionsHTML, setSuggestionsHTML] = useState([]);
     const [modalVisible, setModalVisible] = useState(false); // State for modal visibility
     const cameraRef = useRef(null);
+
+    useEffect(() => {
+        if (route.params?.imageUri && !pictureTaken) {
+            const { imageUri } = route.params;
+            console.log(route.params?.imageUri);
+            setCapturedImageURI(imageUri);
+            setPictureTaken(true);
+            setLoading(true); // Set loading to true when a new image is selected
+            detectObjects(imageUri);
+        }
+    }, [route.params, pictureTaken]);
 
     if (!permission) {
         // Camera permissions are still loading.

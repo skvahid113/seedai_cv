@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -8,8 +8,17 @@ export default function More() {
     const [selectedImage, setSelectedImage] = useState(null);
     const navigation = useNavigation();
 
+    useEffect(() => {
+        (async () => {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                alert('Sorry, we need camera roll permissions to make this work!');
+            }
+        })();
+    }, []);
+
     const pickImage = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
+        const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [4, 3],
@@ -17,33 +26,27 @@ export default function More() {
         });
 
         if (!result.canceled) {
-            setSelectedImage(result.uri);
-            // Call your object detection function here with result.uri
-            detectObject(result.uri);
+            const selectedImageUri = result.assets[0].uri;
+            console.log('Selected Image URI:', selectedImageUri);
+            navigation.navigate('Diagnose', { imageUri: selectedImageUri });
+        } else {
+            console.log('Image selection was canceled');
         }
     };
 
-    const detectObject = (imageUri) => {
-        // Implement your object detection logic here
-        console.log('Detecting object in image: ', imageUri);
-        // This is where you would typically call your object detection model
-    };
 
     return (
         <View style={styles.container}>
             <View style={styles.topSection}>
-
                 <TouchableOpacity style={styles.topButton} onPress={() => navigation.navigate('Diagnose')}>
                     <FontAwesome name="camera" size={40} color="white" />
                     <Text style={styles.topButtonText}>Scan</Text>
                 </TouchableOpacity>
-
                 <TouchableOpacity style={styles.topButton} onPress={pickImage}>
                     <FontAwesome name="image" size={40} color="white" />
                     <Text style={styles.topButtonText}>Image</Text>
                 </TouchableOpacity>
             </View>
-
             <Text style={styles.mainTitle}>Explore by Identifying</Text>
             <View style={styles.grid}>
                 <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('Objectdetection')}>
@@ -63,11 +66,9 @@ export default function More() {
                     <Text style={styles.gridText}>My Compost</Text>
                 </TouchableOpacity>
             </View>
-
             {selectedImage && (
                 <View style={styles.imageContainer}>
                     <Image source={{ uri: selectedImage }} style={styles.image} />
-                    {/* Overlay object detection results here */}
                     <Text style={styles.overlayText}>Object Detected!</Text>
                 </View>
             )}
