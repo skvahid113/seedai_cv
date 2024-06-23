@@ -40,11 +40,14 @@ export default function Launch() {
     };
 
     return (
-        <ImageBackground source={require('./assets/seedai.png')} style={styles.background}>
+        <ImageBackground source={require('./assets/gif.gif')} style={styles.background}>
             <View style={styles.overlay}>
                 <View style={styles.textContainer}>
                     <Text style={styles.title}>Wormhealth</Text>
-                    <Text style={styles.titleai}>AI</Text>
+                    <Text style={styles.titleai}>
+                        <Text style={styles.part1}>A</Text>
+                        <Text style={styles.part2}>I</Text>
+                    </Text>
                     <Text style={styles.subtitle}>{subtitleText}{showCursorSubtitle ? '|' : ''}</Text>
                     {seedAIEnabled && ( // Render SeedAI text only if it's enabled
                         <Text style={styles.seedaiText}>SeedAI</Text>
@@ -52,7 +55,7 @@ export default function Launch() {
                 </View>
                 <TouchableOpacity style={styles.button} onPress={handleGetStarted}>
                     <LinearGradient
-                        colors={['#819909', '#819909', '#A7C901']}
+                        colors={['#40B64F', '#40B64F', '#FDE500']}
                         style={styles.gradientButton}
                         start={[0, 0.5]}
                         end={[1, 0.5]}
@@ -87,15 +90,18 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 58,
-        color: '#FDE500',
+        color: '#00E676',
         marginBottom: 10,
         textAlign: 'center',
+        fontStyle: 'agrandir',
+        fontStyle: 'italic'
     },
     titleai: {
         fontSize: 80,
-        color: '#FED230',
+        color: '#80267D',
         marginBottom: 10,
         textAlign: 'center',
+        fontWeight: 'bold'
     },
     subtitle: {
         fontSize: 30,
@@ -105,12 +111,13 @@ const styles = StyleSheet.create({
     },
     seedaiText: {
         fontSize: 62,
-        color: '#F6FEF6',
+        color: '#06BCCD',
         marginBottom: 10,
         textAlign: 'center',
         fontWeight: 'bold'
     },
     button: {
+        // marginTop: 20,
         borderRadius: 8,
         overflow: 'hidden', // Ensure gradient button doesn't overflow its border-radius
     },
@@ -124,5 +131,12 @@ const styles = StyleSheet.create({
         fontSize: 20,
         color: '#fff',
         textAlign: 'center',
+    },
+
+    part1: {
+        color: '#F4D03F',  // Color for the first part (A)
+    },
+    part2: {
+        color: '#C65042',  // Color for the second part (I)
     },
 });

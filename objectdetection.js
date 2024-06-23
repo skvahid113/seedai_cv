@@ -57,7 +57,7 @@ export default function ObjectDetection() {
             type: 'image/png',
         });
 
-        fetch('http://192.168.0.109:9191/detect/', {
+        fetch('http://192.168.0.103:9191/detect/', {
             method: 'POST',
             body: formData,
             headers: {

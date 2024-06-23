@@ -22,6 +22,14 @@ export default function Diagnose() {
     const [suggestionsHTML, setSuggestionsHTML] = useState([]);
     const [modalVisible, setModalVisible] = useState(false); // State for modal visibility
     const cameraRef = useRef(null);
+    const [clsmodalVisible, setCLSModalVisible] = useState(false); // State for modal visibility
+    const [showAnalysis, setShowAnalysis] = useState(false);
+    const [analysisResult, setAnalysisResult] = useState(null);
+    const [isModel1Active, setIsModel1Active] = useState(true);
+    const [isModel2Active, setIsModel2Active] = useState(false);
+
+
+
 
     useEffect(() => {
         if (route.params?.imageUri && !pictureTaken) {
@@ -70,36 +78,121 @@ export default function Diagnose() {
     }
 
     function getNLPSuggestions(detectedObjectsText, setSuggestionsHTML) {
-        console.log(detectedObjectsText);
         // Call the API to generate suggestions
-        fetch('http://192.168.0.109:9191/generate?text=' + encodeURIComponent(detectedObjectsText), {
+        fetch('http://192.168.0.105:9195/generate?text=' + encodeURIComponent(detectedObjectsText), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'api_key_header': 'AIzaSyD7DbIF_nStfpj1vjIVpX7q-eBrM-YcRbI',  // Replace with your actual API key header if required
             }
         })
             .then((response) => response.json())
             .then((data) => {
                 console.log("response", data);
-                // Parse the generated text into HTML points
-                const suggestionsHTML = data.generated_text.split('\n')
-                    .filter(point => point.trim() !== "") // Remove empty lines
-                    .map((point, index) => (
-                        <View key={index} style={styles.suggestionBox}>
-                            <FontAwesome name="caret-right" size={16} color="#007AFF" />
-                            <Text style={styles.suggestionText}>{point.trim().replace(/\*\*/g, '')}</Text>
-                        </View>
-                    ));
-                // Update the state to show suggestions
-                setSuggestionsHTML(suggestionsHTML);
-                setShowSuggestions(true);
-                setModalVisible(true); // Show modal with suggestions
+                // Check if generated_text exists and is an array
+                if (data && Array.isArray(data.generated_text)) {
+                    // Parse the generated text into JSX elements
+                    const suggestionsHTML = data.generated_text
+                        .join('. ') // Join sentences with dots and space
+                        .split('. ') // Split by dots and space to get individual sentences
+                        .filter(sentence => sentence.trim() !== "") // Remove empty lines
+                        .map((sentence, index) => (
+                            <View key={index} style={styles.chatBubble}>
+                                <Text style={styles.chatText}>{sentence.trim()}</Text>
+                            </View>
+                        ));
+                    // Update the state to show suggestions
+                    setSuggestionsHTML(suggestionsHTML); // Set JSX elements directly
+                    setShowSuggestions(true);
+                    setModalVisible(true); // Show modal with suggestions
+                } else {
+                    console.error('Invalid response format or missing generated_text:', data);
+                    // Handle the case where generated_text is missing or not an array
+                }
             })
             .catch((error) => {
                 console.error('Error fetching suggestions:', error);
             });
     }
+
+    function analyseCompostHealth(imageUri) {
+        setLoading(true);
+
+        const formData = new FormData();
+        formData.append('file', {
+            uri: imageUri,
+            name: 'image.png',
+            type: 'image/png',
+        });
+
+        fetch('http://192.168.0.105:9195/predict/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'multipart/form-data',
+            },
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then((data) => {
+                console.log('Analysis Response:', data);
+                setAnalysisResult(data.predictions);
+                setLoading(false);
+                setCLSModalVisible(true); // Show the modal when analysis results are ready
+                setShowAnalysis(true); // Show the analysis result box
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                setLoading(false);
+            });
+    }
+
+    function detectObjectCustom(imageUri) {
+        setLoading(true);
+
+        const formData = new FormData();
+        formData.append('file', {
+            uri: imageUri,
+            name: 'image.png',
+            type: 'image/png',
+        });
+
+        fetch('http://192.168.0.105:9100/detect_objects/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'multipart/form-data',
+            },
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then((data) => {
+                console.log('Custom Object Detection Response:', data);
+                setDetectedObjects(data.descriptions); // Set detected objects
+                setAnalysisResult(data.predictions); // Set analysis result
+                setLoading(false);
+                setCLSModalVisible(true); // Show the modal when analysis results are ready
+                setShowAnalysis(true); // Show the analysis result box
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                setLoading(false);
+            });
+    }
+
+
+
+
+
 
     function detectObjects(imageUri) {
         setLoading(true);
@@ -112,7 +205,7 @@ export default function Diagnose() {
             type: 'image/png',
         });
 
-        fetch('http://192.168.0.109:9191/detect/', {
+        fetch('http://192.168.0.105:9195/detect/', {
             method: 'POST',
             body: formData,
             headers: {
@@ -165,6 +258,9 @@ export default function Diagnose() {
         }, 300);
     }
 
+
+
+
     function retakePicture() {
         setPictureTaken(false);
         setShowObjects(false);
@@ -205,17 +301,67 @@ export default function Diagnose() {
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>Detected Objects</Text>
                             {showObjects && detectedObjects.length > 0 ? (
-                                <View style={styles.itemContainer}>
-                                    {detectedObjects.map((description, index) => (
-                                        <View key={index} style={[styles.itemBox, { backgroundColor: '#7A7458' }]}>
-                                            <Text style={styles.itemText}>{description}</Text>
-                                        </View>
-                                    ))}
+                                <View style={styles.card}>
+                                    <View style={styles.buttonContainer}>
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                setIsModel1Active(true);
+                                                setIsModel2Active(false);
+                                            }}
+                                            style={[
+                                                styles.modelButton,
+                                                isModel1Active ? styles.activeModelButton : styles.inactiveModelButton
+                                            ]}
+                                        >
+                                            <Text style={styles.buttonText}>Model 1</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                setIsModel1Active(false);
+                                                setIsModel2Active(true);
+                                                detectObjectCustom(capturedImageURI); // Call the custom object detect method
+                                            }}
+                                            style={[
+                                                styles.modelButton,
+                                                isModel2Active ? styles.activeModelButton : styles.inactiveModelButton
+                                            ]}
+                                        >
+                                            <Text style={styles.buttonText}>Model 2</Text>
+                                        </TouchableOpacity>
+
+                                    </View>
+                                    <View style={styles.itemContainer}>
+                                        {detectedObjects.map((description, index) => (
+                                            <View key={index} style={[styles.itemBox, { backgroundColor: '#3D3D3D' }]}>
+                                                <Text style={styles.itemText}>{description}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
                                 </View>
                             ) : (
                                 <Text>No Objects Detected</Text>
                             )}
                         </View>
+
+                        {showAnalysis && analysisResult ? (
+                            <View>
+                                {analysisResult.map((result, index) => (
+                                    <View key={index} style={styles.progressBarContainer}>
+                                        <Text style={styles.skillLabel}>{result.label}</Text>
+                                        <View style={styles.progressBar}>
+                                            <View style={[styles.progressBarFill, { width: `${result.score * 100}%` }]}>
+                                                <Text style={styles.progressBarText}>{`${Math.round(result.score * 100)}%`}</Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                ))}
+                            </View>
+                        ) : (
+                            <Text></Text>
+                        )}
+
+
+
                         {showObjects && (
                             <>
                                 <TouchableOpacity onPress={() => setShowSuggestions(!showSuggestions)}>
@@ -229,7 +375,7 @@ export default function Diagnose() {
                                         <Text style={styles.contentText}>{getSuggestions()}</Text>
                                         <TouchableOpacity
                                             onPress={() => getNLPSuggestions(detectedObjects.join(', '), setSuggestionsHTML)}
-                                            style={[styles.analyzeButton, { backgroundColor: '#25874A', width: 150 }]}
+                                            style={[styles.analyzeButton, { backgroundColor: '#149D81', width: 150 }]}
                                         >
                                             <Text style={styles.buttonText}>Suggest</Text>
                                         </TouchableOpacity>
@@ -244,12 +390,12 @@ export default function Diagnose() {
                                 {showAnalyze && (
                                     <View style={styles.accordionContent}>
                                         <Text style={styles.contentText}>{getAnalysis()}</Text>
-                                        <TouchableOpacity
-                                            onPress={() => alert('Analysis displayed')}
-                                            style={[styles.analyzeButton, { backgroundColor: '#25874A', width: 150 }]}
-                                        >
-                                            <Text style={styles.buttonText}>Analyze</Text>
+                                        <TouchableOpacity onPress={() => analyseCompostHealth(capturedImageURI)}>
+                                            <View style={[styles.analyzeButton, { backgroundColor: '#149D81', width: 150 }]}>
+                                                <Text style={styles.buttonText}>Analyze</Text>
+                                            </View>
                                         </TouchableOpacity>
+
                                     </View>
                                 )}
                             </>
@@ -291,6 +437,45 @@ export default function Diagnose() {
                     </View>
                 </View>
             </Modal>
+
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={clsmodalVisible}
+                onRequestClose={() => {
+                    setCLSModalVisible(!clsmodalVisible);
+                }}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Compost Health Analysis</Text>
+                        {showAnalysis && analysisResult ? (
+                            <View>
+                                {analysisResult.map((result, index) => (
+                                    <View key={index} style={styles.progressBarContainer}>
+                                        <Text style={styles.skillLabel}>{result.label}</Text>
+                                        <View style={styles.progressBar}>
+                                            <View style={[styles.progressBarFill, { width: `${result.score * 100}%` }]}>
+                                                <Text style={styles.progressBarText}>{`${Math.round(result.score * 100)}%`}</Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                ))}
+                            </View>
+                        ) : (
+                            <Text>No analysis results available</Text>
+                        )}
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={() => setCLSModalVisible(!clsmodalVisible)}
+                        >
+                            <Text style={styles.closeButtonText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+
 
         </View>
     );
@@ -411,7 +596,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 10,
         paddingHorizontal: 20,
-        backgroundColor: '#3DCF85',
+        backgroundColor: '#139D83',
         borderRadius: 5,
         marginVertical: 5,
     },
@@ -497,5 +682,88 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 10,
+    },
+
+    progressBarContainer: {
+        marginVertical: 10,
+    },
+    skillLabel: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 5,
+    },
+    progressBar: {
+        width: '100%',
+        backgroundColor: '#d3d3d3',
+        borderRadius: 20,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        height: 30,
+        backgroundColor: '#4caf50',
+        justifyContent: 'center',
+        borderRadius: 20,
+    },
+    progressBarText: {
+        color: '#fff',
+        textAlign: 'center',
+        fontWeight: 'bold',
+    },
+
+    section: {
+        marginBottom: 20,
+        backgroundColor: '#F0F0F0',
+        borderRadius: 5,
+        padding: 20,
+        width: '100%',
+    },
+    card: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 10,
+        padding: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+        elevation: 3,
+    },
+    itemContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    itemBox: {
+        width: '100%',
+        marginVertical: 10,
+        padding: 10,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    itemText: {
+        fontSize: 18,
+        color: '#FFF',
+        textAlign: 'center',
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginTop: 10,
+    },
+    modelButton: {
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+    },
+    activeModelButton: {
+        backgroundColor: '#007AFF',
+    },
+    inactiveModelButton: {
+        backgroundColor: '#CCCCCC',
+    },
+    buttonText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: 'white',
+        textAlign: 'center',
     },
 });

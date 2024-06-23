@@ -19,7 +19,7 @@ function HomeTabs() {
       screenOptions={{
         tabBarActiveTintColor: '#071D46',
         tabBarInactiveTintColor: '#dddddd',
-        tabBarStyle: { backgroundColor: '#269F72', display: 'flex' },
+        tabBarStyle: { backgroundColor: '#019545', display: 'flex' },
       }}
     >
       <Tab.Screen
