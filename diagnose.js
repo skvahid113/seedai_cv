@@ -80,8 +80,16 @@ export default function Diagnose() {
     }
 
     function getNLPSuggestions(detectedObjectsText, setSuggestionsHTML) {
+        let objectsToUse = detectedObjectsText;
+
+        // Check if detectedObjectsText is null or empty
+        if (!detectedObjectsText || detectedObjectsText.trim() === "") {
+            console.log("Using custom object detection response for suggestions");
+            objectsToUse = model2DetectedObjects.map(object => object.label).join(", ");
+        }
+
         // Call the API to generate suggestions
-        fetch('http://192.168.0.105:9195/generate?text=' + encodeURIComponent(detectedObjectsText), {
+        fetch('http://192.168.0.105:9195/generate?text=' + encodeURIComponent(objectsToUse), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -115,6 +123,7 @@ export default function Diagnose() {
                 console.error('Error fetching suggestions:', error);
             });
     }
+
 
     function analyseCompostHealth(imageUri) {
         setLoading(true);
