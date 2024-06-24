@@ -27,6 +27,8 @@ export default function Diagnose() {
     const [analysisResult, setAnalysisResult] = useState(null);
     const [isModel1Active, setIsModel1Active] = useState(true);
     const [isModel2Active, setIsModel2Active] = useState(false);
+    const [model2DetectedObjects, setModel2DetectedObjects] = useState([]);
+
 
 
 
@@ -161,7 +163,7 @@ export default function Diagnose() {
             type: 'image/png',
         });
 
-        fetch('http://192.168.0.105:9100/detect_objects/', {
+        fetch('http://192.168.0.105:9786/detect_objects/', {
             method: 'POST',
             body: formData,
             headers: {
@@ -177,16 +179,16 @@ export default function Diagnose() {
             })
             .then((data) => {
                 console.log('Custom Object Detection Response:', data);
-                setDetectedObjects(data.descriptions); // Set detected objects
-                setAnalysisResult(data.predictions); // Set analysis result
+                setModel2DetectedObjects(data.predictions || []); // Ensure predictions is set to an empty array if undefined
                 setLoading(false);
-                setCLSModalVisible(true); // Show the modal when analysis results are ready
-                setShowAnalysis(true); // Show the analysis result box
+
+                setIsModel2Active(true)
             })
             .catch((error) => {
                 console.error('Error:', error);
                 setLoading(false);
             });
+
     }
 
 
@@ -300,7 +302,7 @@ export default function Diagnose() {
                     <ScrollView>
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>Detected Objects</Text>
-                            {showObjects && detectedObjects.length > 0 ? (
+                            {showObjects && (
                                 <View style={styles.card}>
                                     <View style={styles.buttonContainer}>
                                         <TouchableOpacity
@@ -328,22 +330,44 @@ export default function Diagnose() {
                                         >
                                             <Text style={styles.buttonText}>Model 2</Text>
                                         </TouchableOpacity>
-
                                     </View>
                                     <View style={styles.itemContainer}>
-                                        {detectedObjects.map((description, index) => (
-                                            <View key={index} style={[styles.itemBox, { backgroundColor: '#3D3D3D' }]}>
-                                                <Text style={styles.itemText}>{description}</Text>
+                                        {isModel1Active && (
+                                            detectedObjects.length > 0 ? (
+                                                detectedObjects.map((description, index) => (
+                                                    <View key={index} style={[styles.itemBox, { backgroundColor: '#3D3D3D' }]}>
+                                                        <Text style={styles.itemText}>{description}</Text>
+                                                    </View>
+                                                ))
+                                            ) : (
+                                                <Text>No Objects Detected</Text>
+                                            )
+                                        )}
+
+                                        {isModel2Active && (
+                                            <View style={styles.section}>
+                                                {/* Display Model 2 results here */}
+                                                {model2DetectedObjects.map((object, index) => (
+                                                    <View key={index} style={styles.progressBarContainer}>
+                                                        <Text style={styles.skillLabel}>Detected Object: {object.label}</Text>
+                                                        <View style={styles.progressBar}>
+                                                            <View style={[styles.progressBarFill, { width: `${object.score * 100}%` }]}>
+                                                                <Text style={styles.progressBarText}>{`${Math.round(object.score * 100)}%`}</Text>
+                                                            </View>
+                                                        </View>
+                                                    </View>
+                                                ))}
                                             </View>
-                                        ))}
+                                        )}
+
+
                                     </View>
                                 </View>
-                            ) : (
-                                <Text>No Objects Detected</Text>
                             )}
                         </View>
 
-                        {showAnalysis && analysisResult ? (
+
+                        {/* {showAnalysis && analysisResult ? (
                             <View>
                                 {analysisResult.map((result, index) => (
                                     <View key={index} style={styles.progressBarContainer}>
@@ -358,7 +382,7 @@ export default function Diagnose() {
                             </View>
                         ) : (
                             <Text></Text>
-                        )}
+                        )} */}
 
 
 
@@ -644,16 +668,22 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
+    // Update styles for compost analysis modal
     modalContent: {
         width: '90%',
-        height: '60%', // Adjust the height as needed
-        backgroundColor: '#FFF',
+        height: '60%',
+        backgroundColor: '#FDD035',
         borderRadius: 10,
         padding: 20,
         alignItems: 'center',
+        justifyContent: 'center',
+        // Background gradient
+        background: 'linear-gradient(to right, #FFC371, #FF5F6D)',
+        boxShadow: '0px 4px 25px rgba(0, 0, 0, 0.1)',
     },
+
     modalTitle: {
-        fontSize: 28,
+        fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 10,
     },
@@ -662,7 +692,7 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
     closeButton: {
-        marginTop: 20,
+        marginTop: 30,
         backgroundColor: '#F47434',
         paddingVertical: 10,
         paddingHorizontal: 20,
@@ -765,5 +795,42 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: 'white',
         textAlign: 'center',
+    },
+
+    section: {
+        marginBottom: 20,
+        backgroundColor: '#F0F0F0',
+        borderRadius: 5,
+        padding: 20,
+        width: '100%',
+    },
+    progressBarContainer: {
+        marginVertical: 10,
+    },
+    skillLabel: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 5,
+    },
+    progressBar: {
+        width: '100%',
+        height: 30,  // Adjust height as needed
+        backgroundColor: '#d3d3d3',
+        borderRadius: 20,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        height: '100%',
+        backgroundColor: '#4caf50',
+        borderRadius: 20,
+        position: 'relative',
+    },
+    progressBarText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        position: 'absolute',
+        textAlign: 'center',
+        width: '100%',
+        zIndex: 1,
     },
 });

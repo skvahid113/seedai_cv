@@ -9,9 +9,13 @@ import Mycompost from './mycompost';
 import More from './more';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Objectdetection from './objectdetection';
+import { LogBox } from 'react-native'; // Import LogBox module
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+// Ignore all log notifications
+LogBox.ignoreAllLogs(true);
 
 function HomeTabs() {
   return (
