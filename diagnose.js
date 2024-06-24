@@ -7,7 +7,7 @@ import * as Progress from 'react-native-progress'; // Import Progress from react
 import { useRoute } from '@react-navigation/native'; // Add this line
 
 
-export default function Diagnose() {
+export default function Diagnose({ navigation }) {
     const route = useRoute();
     const [permission, requestPermission] = useCameraPermissions();
     const [showObjects, setShowObjects] = useState(false);
@@ -280,6 +280,8 @@ export default function Diagnose() {
         setCapturedImageURI(null);
         setDetectedObjects([]);
         setCroppedImages([]);
+        setModel2DetectedObjects([]);
+        
     }
 
     function getSuggestions() {
@@ -680,8 +682,8 @@ const styles = StyleSheet.create({
     // Update styles for compost analysis modal
     modalContent: {
         width: '90%',
-        height: '60%',
-        backgroundColor: '#FDD035',
+        height: '70%',
+        backgroundColor: '#F9F9DD',
         borderRadius: 10,
         padding: 20,
         alignItems: 'center',
@@ -714,13 +716,14 @@ const styles = StyleSheet.create({
     },
     suggestionText: {
         fontSize: 16,
-        color: '#000',
+        color: 'white',
         marginVertical: 5,
     },
     suggestionBox: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 10,
+
     },
 
     progressBarContainer: {
